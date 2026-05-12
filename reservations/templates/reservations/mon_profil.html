@@ -1,0 +1,77 @@
+{% extends "reservations/base.html" %}
+{% block titre %}Mon Profil{% endblock %}
+
+{% block contenu %}
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-user-circle" style="color: var(--terre-battue);"></i> Mon Profil</h1>
+        <p>Modifie tes coordonnées et ton mot de passe.</p>
+    </div>
+</div>
+
+<div style="display:flex; gap:24px; flex-wrap:wrap;">
+
+    <!-- Infos du membre (carte identité) -->
+    <div class="card" style="flex:1; min-width:300px;">
+        <h2><i class="fas fa-id-card"></i> Informations</h2>
+        <div style="display:grid; gap:10px; font-size:0.92em;">
+            <p><strong style="color:var(--vert-court);">Numéro AFT :</strong> <span style="font-family:'Oswald',sans-serif; font-size:1.1em;">{{ membre.numero_affiliation }}</span></p>
+            <p><strong style="color:var(--vert-court);">Nom :</strong> {{ membre.nom }}</p>
+            <p><strong style="color:var(--vert-court);">Prénom :</strong> {{ membre.prenom }}</p>
+            <p><strong style="color:var(--vert-court);">Sexe :</strong> {{ membre.sexe }}</p>
+            <p><strong style="color:var(--vert-court);">Date de naissance :</strong> {{ membre.date_naissance|date:"d/m/Y" }}</p>
+            <p><strong style="color:var(--vert-court);">Classement :</strong> <span class="badge badge-or">{{ membre.classement }}</span></p>
+            <p><strong style="color:var(--vert-court);">Cotisation :</strong>
+                {% if membre.en_ordre_cotisation %}
+                    <span class="badge badge-green"><i class="fas fa-check-circle"></i> En ordre</span>
+                {% else %}
+                    <span class="badge badge-red"><i class="fas fa-exclamation-triangle"></i> Pas en ordre</span>
+                {% endif %}
+            </p>
+            {% if membre.date_echeance %}
+            <p><strong style="color:var(--vert-court);">Échéance :</strong> {{ membre.date_echeance|date:"d/m/Y" }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modifier coordonnées -->
+    <div class="card" style="flex:1; min-width:300px;">
+        <h2><i class="fas fa-edit"></i> Mes coordonnées</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {% for field in form_profil %}
+            <div class="form-group">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="form-error">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" name="modifier_profil" class="btn btn-primary">
+                <i class="fas fa-save"></i> Enregistrer
+            </button>
+        </form>
+    </div>
+
+    <!-- Changer mot de passe -->
+    <div class="card" style="flex:1; min-width:300px;">
+        <h2><i class="fas fa-lock"></i> Mot de passe</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {% for field in form_mdp %}
+            <div class="form-group">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="form-error">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" name="changer_mdp" class="btn btn-primary">
+                <i class="fas fa-key"></i> Changer
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "reservations/base.html" %}
+{% block titre %}Mes Réservations{% endblock %}
+
+{% block contenu %}
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-calendar-check" style="color: var(--terre-battue);"></i> Mes Réservations</h1>
+        <p>Tes réservations à venir et passées.</p>
+    </div>
+</div>
+
+<!-- Réservations futures -->
+<div class="card">
+    <h2>
+        <i class="fas fa-calendar-alt"></i> À venir
+    </h2>
+    <table class="table-list">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Heure</th>
+                <th>Terrain</th>
+                <th>Type</th>
+                <th>Joueurs</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in resas_futures %}
+            <tr>
+                <td>{{ r.date|date:"d/m/Y" }}</td>
+                <td style="font-family:'Oswald',sans-serif; font-size:1em;">{{ r.heure_debut }}h00 <span style="color:var(--gris-filet); font-family:'Inter',sans-serif; font-size:0.8em;">({{ r.duree }}h)</span></td>
+                <td>Court {{ r.terrain.numero }}</td>
+                <td>{% if r.duree == 1 %}<span class="badge badge-green">Simple</span>{% else %}<span class="badge badge-or">Double</span>{% endif %}</td>
+                <td>
+                    {% for m in r.membres.all %}
+                        {{ m.prenom }} {{ m.nom }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if r.peut_annuler %}
+                    <a href="#" class="btn btn-danger btn-sm btn-annuler"
+                       data-url="{% url 'supprimer_reservation' r.id %}"
+                       data-joueurs="{% for m in r.membres.all %}{{ m.prenom }} {{ m.nom }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+                       data-type="{% if r.duree == 1 %}Simple{% else %}Double{% endif %}"
+                       data-court="Court {{ r.terrain.numero }}"
+                       data-horaire="{{ r.date|date:'d/m/Y' }} à {{ r.heure_debut }}h00">
+                       <i class="fas fa-times"></i> Annuler
+                    </a>
+                    {% else %}
+                    <span style="font-size:0.78em; color:var(--gris-filet);"><i class="fas fa-lock"></i> - de 24h</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center; color:var(--gris-filet); padding:24px;">Aucune réservation à venir.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Réservations passées -->
+<div class="card">
+    <h2 style="color: var(--gris-filet);">
+        <i class="fas fa-history"></i> Historique
+    </h2>
+    <table class="table-list">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Heure</th>
+                <th>Terrain</th>
+                <th>Type</th>
+                <th>Joueurs</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in resas_passees %}
+            <tr style="opacity:0.7;">
+                <td>{{ r.date|date:"d/m/Y" }}</td>
+                <td style="font-family:'Oswald',sans-serif;">{{ r.heure_debut }}h00 ({{ r.duree }}h)</td>
+                <td>Court {{ r.terrain.numero }}</td>
+                <td>{% if r.duree == 1 %}Simple{% else %}Double{% endif %}</td>
+                <td>
+                    {% for m in r.membres.all %}
+                        {{ m.prenom }} {{ m.nom }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center; color:var(--gris-filet); padding:24px;">Pas encore d'historique.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

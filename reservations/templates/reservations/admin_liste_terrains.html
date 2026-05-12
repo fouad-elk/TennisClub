@@ -1,0 +1,51 @@
+{% extends "reservations/base.html" %}
+{% block titre %}Gestion Terrains{% endblock %}
+
+{% block contenu %}
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-table-tennis-paddle-ball" style="color: var(--terre-battue);"></i> Gestion des Terrains</h1>
+        <p>Ajouter ou supprimer des terrains.</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <a href="{% url 'admin_bloquer_terrain' %}" class="btn btn-outline">
+            <i class="fas fa-ban"></i> Bloquer un terrain
+        </a>
+        <a href="{% url 'admin_ajout_terrain' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Ajouter un terrain
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <table class="table-list">
+        <thead>
+            <tr>
+                <th>Numéro</th>
+                <th>Surface</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in terrains %}
+            <tr>
+                <td style="font-family:'Montserrat',sans-serif; font-weight:600;">Court {{ t.numero }}</td>
+                <td>
+                    <span class="badge badge-or">{{ t.surface }}</span>
+                </td>
+                <td>
+                    <form method="POST" action="{% url 'admin_supprimer_terrain' t.id %}" style="display:inline;" onsubmit="return confirm('Supprimer le court {{ t.numero }} ? Les réservations futures seront aussi supprimées.')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i> Supprimer
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" style="text-align:center; color:var(--gris-filet); padding:24px;">Aucun terrain.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

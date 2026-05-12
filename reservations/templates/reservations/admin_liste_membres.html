@@ -1,0 +1,88 @@
+{% extends "reservations/base.html" %}
+{% block titre %}Gestion Membres{% endblock %}
+
+{% block contenu %}
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-users" style="color: var(--terre-battue);"></i> Gestion des Membres</h1>
+        <p>Ajouter, modifier ou supprimer des membres.</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <a href="{% url 'admin_activation_membres' %}" class="btn btn-outline">
+            <i class="fas fa-toggle-on"></i> Cotisations
+        </a>
+        <a href="{% url 'admin_ajout_membre' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Ajouter un membre
+        </a>
+    </div>
+</div>
+
+<!-- Recherche -->
+<form method="GET" class="search-bar">
+    <input type="text" name="q" value="{{ recherche }}" placeholder="Rechercher par nom ou n° AFT...">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Rechercher</button>
+</form>
+
+<div class="card">
+    <table class="table-list">
+        <thead>
+            <tr>
+                <th>N° AFT</th>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Classement</th>
+                <th>Cotisation</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in membres %}
+            <tr>
+                <td style="font-family:'Oswald',sans-serif;">{{ m.numero_affiliation }}</td>
+                <td>{{ m.nom }}</td>
+                <td>{{ m.prenom }}</td>
+                <td><span class="badge badge-or">{{ m.classement }}</span></td>
+                <td>
+                    {% if m.en_ordre_cotisation %}
+                        <span class="badge badge-green"><i class="fas fa-check"></i> OK</span>
+                    {% else %}
+                        <span class="badge badge-red"><i class="fas fa-times"></i> Non</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'admin_modifier_membre' m.id %}" class="btn btn-outline btn-sm">
+                        <i class="fas fa-edit"></i> Modifier
+                    </a>
+                    <form method="POST" action="{% url 'admin_supprimer_membre' m.id %}" style="display:inline;" onsubmit="return confirm('Supprimer {{ m.prenom }} {{ m.nom }} ?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center; color:var(--gris-filet); padding:24px;">Aucun membre.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if membres.has_other_pages %}
+    <div class="pagination">
+        {% if membres.has_previous %}
+        <a href="?page={{ membres.previous_page_number }}&q={{ recherche }}">«</a>
+        {% endif %}
+        {% for num in membres.paginator.page_range %}
+            {% if membres.number == num %}
+            <span class="current">{{ num }}</span>
+            {% else %}
+            <a href="?page={{ num }}&q={{ recherche }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if membres.has_next %}
+        <a href="?page={{ membres.next_page_number }}&q={{ recherche }}">»</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

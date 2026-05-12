@@ -1,0 +1,172 @@
+{% extends "reservations/base.html" %}
+{% block titre %}Annuaire{% endblock %}
+
+{% block contenu %}
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-address-book" style="color: var(--terre-battue);"></i> Annuaire</h1>
+        <p>Liste des membres du club.</p>
+    </div>
+</div>
+
+<!-- Recherche en temps réel (AJAX avec fetch) -->
+<div class="search-bar">
+    <input type="text" id="recherche-live" placeholder="Recherche en direct (nom ou prénom)..." value="{{ recherche }}" autocomplete="off">
+    <select id="filtre-classement">
+        <option value="">Tous les classements</option>
+        {% for code, label in classements %}
+        <option value="{{ code }}" {% if classement_filtre == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <span id="recherche-status" style="font-size:0.8em; color:var(--gris-filet);"></span>
+</div>
+
+<!-- Résultats AJAX (mis à jour en live) -->
+<div id="resultats-ajax" class="card" style="display:none;">
+    <table class="table-list">
+        <thead>
+            <tr>
+                <th>Nom</th><th>Prénom</th><th>Classement</th>
+                <th>Sexe</th><th>Localité</th><th>Cotisation</th>
+            </tr>
+        </thead>
+        <tbody id="tbody-ajax"></tbody>
+    </table>
+</div>
+
+<!-- Résultats classiques (avec pagination côté serveur) -->
+<div id="resultats-classiques">
+    <form method="GET" class="search-bar" style="margin-top:10px;">
+        <input type="text" name="q" value="{{ recherche }}" placeholder="Rechercher un nom...">
+        <select name="classement">
+            <option value="">Tous les classements</option>
+            {% for code, label in classements %}
+            <option value="{{ code }}" {% if classement_filtre == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="categorie">
+            <option value="">Toutes les catégories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if categorie_filtre == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nom }}</option>
+            {% endfor %}
+        </select>
+        <select name="tri">
+            <option value="nom" {% if tri == "nom" %}selected{% endif %}>Tri par nom</option>
+            <option value="classement" {% if tri == "classement" %}selected{% endif %}>Tri par classement</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Filtrer</button>
+    </form>
+
+    <div class="card">
+        <table class="table-list">
+            <thead>
+                <tr>
+                    <th>Nom</th><th>Prénom</th><th>Classement</th>
+                    <th>Sexe</th><th>Localité</th><th>Cotisation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in membres %}
+                <tr>
+                    <td>{{ m.nom }}</td>
+                    <td>{{ m.prenom }}</td>
+                    <td>{{ m.classement }}</td>
+                    <td>{{ m.sexe }}</td>
+                    <td>{{ m.localite }}</td>
+                    <td>
+                        {% if m.en_ordre_cotisation %}
+                            <span class="badge badge-green"><i class="fas fa-check"></i> OK</span>
+                        {% else %}
+                            <span class="badge badge-red"><i class="fas fa-times"></i> Non</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center; color:var(--gris-filet); padding:24px;">Aucun membre trouvé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if membres.has_other_pages %}
+        <div class="pagination">
+            {% if membres.has_previous %}
+            <a href="?page={{ membres.previous_page_number }}&q={{ recherche }}&classement={{ classement_filtre }}&categorie={{ categorie_filtre }}&tri={{ tri }}">«</a>
+            {% endif %}
+            {% for num in membres.paginator.page_range %}
+                {% if membres.number == num %}
+                <span class="current">{{ num }}</span>
+                {% else %}
+                <a href="?page={{ num }}&q={{ recherche }}&classement={{ classement_filtre }}&categorie={{ categorie_filtre }}&tri={{ tri }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if membres.has_next %}
+            <a href="?page={{ membres.next_page_number }}&q={{ recherche }}&classement={{ classement_filtre }}&categorie={{ categorie_filtre }}&tri={{ tri }}">»</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Recherche AJAX en temps réel (programmation asynchrone avec fetch)
+const champRecherche = document.getElementById('recherche-live');
+const filtreClassement = document.getElementById('filtre-classement');
+const tbodyAjax = document.getElementById('tbody-ajax');
+const resultatsAjax = document.getElementById('resultats-ajax');
+const resultatsClassiques = document.getElementById('resultats-classiques');
+const status = document.getElementById('recherche-status');
+
+let timer = null;
+
+function lancerRecherche() {
+    const q = champRecherche.value.trim();
+    const classement = filtreClassement.value;
+
+    // Si rien n'est saisi, on revient à l'affichage classique
+    if (!q && !classement) {
+        resultatsAjax.style.display = 'none';
+        resultatsClassiques.style.display = 'block';
+        status.textContent = '';
+        return;
+    }
+
+    status.textContent = 'Recherche...';
+
+    // Appel AJAX avec fetch (programmation asynchrone)
+    fetch(`{% url 'api_recherche_annuaire' %}?q=${encodeURIComponent(q)}&classement=${encodeURIComponent(classement)}`)
+        .then(response => response.json())
+        .then(data => {
+            tbodyAjax.innerHTML = '';
+            if (data.membres.length === 0) {
+                tbodyAjax.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--gris-filet); padding:24px;">Aucun membre trouvé.</td></tr>';
+            } else {
+                data.membres.forEach(m => {
+                    const badge = m.en_ordre
+                        ? '<span class="badge badge-green"><i class="fas fa-check"></i> OK</span>'
+                        : '<span class="badge badge-red"><i class="fas fa-times"></i> Non</span>';
+                    tbodyAjax.innerHTML += `<tr>
+                        <td>${m.nom}</td><td>${m.prenom}</td><td>${m.classement}</td>
+                        <td>${m.sexe}</td><td>${m.localite}</td><td>${badge}</td>
+                    </tr>`;
+                });
+            }
+            resultatsAjax.style.display = 'block';
+            resultatsClassiques.style.display = 'none';
+            status.textContent = `${data.membres.length} résultat(s)`;
+        })
+        .catch(() => {
+            status.textContent = 'Erreur de recherche.';
+        });
+}
+
+// Debounce de 300ms pour ne pas surcharger le serveur
+champRecherche.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(lancerRecherche, 300);
+});
+
+filtreClassement.addEventListener('change', lancerRecherche);
+</script>
+{% endblock %}

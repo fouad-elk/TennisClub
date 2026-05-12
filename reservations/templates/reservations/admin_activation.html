@@ -1,0 +1,86 @@
+{% extends "reservations/base.html" %}
+{% block titre %}Activation Membres{% endblock %}
+
+{% block contenu %}
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-toggle-on" style="color: var(--terre-battue);"></i> Activation / Désactivation</h1>
+        <p>Gérer la cotisation des membres.</p>
+    </div>
+    <a href="{% url 'admin_liste_membres' %}" class="btn btn-outline">
+        <i class="fas fa-arrow-left"></i> Liste membres
+    </a>
+</div>
+
+<!-- Membres inactifs (à activer) -->
+<div class="card">
+    <h2><i class="fas fa-user-plus" style="color: var(--vert-clair);"></i> Membres inactifs ({{ membres_inactifs.count }})</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="activer">
+        <table class="table-list">
+            <thead>
+                <tr>
+                    <th style="width:40px;"><input type="checkbox" onclick="cocherTout(this, 'inactif')"></th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>N° AFT</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in membres_inactifs %}
+                <tr>
+                    <td><input type="checkbox" name="membres_ids" value="{{ m.id }}" class="inactif"></td>
+                    <td>{{ m.nom }}</td>
+                    <td>{{ m.prenom }}</td>
+                    <td style="font-family:'Oswald',sans-serif;">{{ m.numero_affiliation }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align:center; color:var(--gris-filet); padding:20px;">Tout le monde est activé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if membres_inactifs %}
+        <button type="submit" class="btn btn-success" style="margin-top:12px;">
+            <i class="fas fa-check"></i> Activer la sélection
+        </button>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Membres actifs (à désactiver) -->
+<div class="card">
+    <h2><i class="fas fa-user-minus" style="color: var(--rouge-faute);"></i> Membres actifs ({{ membres_actifs.count }})</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="desactiver">
+        <table class="table-list">
+            <thead>
+                <tr>
+                    <th style="width:40px;"><input type="checkbox" onclick="cocherTout(this, 'actif')"></th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>N° AFT</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in membres_actifs %}
+                <tr>
+                    <td><input type="checkbox" name="membres_ids" value="{{ m.id }}" class="actif"></td>
+                    <td>{{ m.nom }}</td>
+                    <td>{{ m.prenom }}</td>
+                    <td style="font-family:'Oswald',sans-serif;">{{ m.numero_affiliation }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align:center; color:var(--gris-filet); padding:20px;">Personne n'est activé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if membres_actifs %}
+        <button type="submit" class="btn btn-danger" style="margin-top:12px;">
+            <i class="fas fa-times"></i> Désactiver la sélection
+        </button>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,189 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tennis Club — {% block titre %}{% endblock %}</title>
+
+    <!-- Polices Google (Montserrat pour les titres, Inter pour le corps, Oswald pour les chiffres) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Inter:wght@400;500;600&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Icônes Lucide (style outline fin) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- SweetAlert2 pour les notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Feuille de style Roland-Garros -->
+    <link rel="stylesheet" href="{% static 'reservations/css/style.css' %}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- NAVBAR — fond vert court -->
+<nav class="navbar">
+    <div class="nav-left">
+        <a href="{% url 'home' %}" class="logo">
+            <div class="logo-icon"><i class="fas fa-baseball-ball"></i></div>
+            Tennis Club
+        </a>
+        <div class="nav-links">
+            <a href="{% url 'dashboard' %}" class="{% if page_active == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-th-large"></i> Tableau de bord
+            </a>
+            <a href="{% url 'home' %}" class="{% if page_active == 'terrains' %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i> Terrains
+            </a>
+            <a href="{% url 'mes_reservations' %}" class="{% if page_active == 'mes_reservations' %}active{% endif %}">
+                <i class="fas fa-calendar-check"></i> Mes Réservations
+            </a>
+            <a href="{% url 'annuaire' %}" class="{% if page_active == 'annuaire' %}active{% endif %}">
+                <i class="fas fa-address-book"></i> Annuaire
+            </a>
+            {% if is_admin %}
+            <a href="{% url 'admin_liste_membres' %}" class="admin-link {% if page_active == 'admin_membres' %}active{% endif %}">
+                <i class="fas fa-users-cog"></i> Membres
+            </a>
+            <a href="{% url 'admin_liste_terrains' %}" class="admin-link {% if page_active == 'admin_terrains' %}active{% endif %}">
+                <i class="fas fa-cog"></i> Terrains
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="nav-right">
+        {% if is_admin %}
+        <span style="background:#C1440E; color:#fff; padding:3px 10px; border-radius:6px; font-size:0.75em; font-weight:700; letter-spacing:1px; margin-right:8px;">ADMIN</span>
+        {% endif %}
+        <a href="{% url 'mon_profil' %}" class="nav-profile">
+            <i class="fas fa-user-circle"></i>
+            {% if membre_global %}{{ membre_global.prenom }} {{ membre_global.nom }}{% else %}Mon Profil{% endif %}
+        </a>
+        <form action="{% url 'logout' %}" method="post" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="nav-logout" title="Déconnexion">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </form>
+    </div>
+</nav>
+
+<!-- CONTENU PRINCIPAL -->
+<div class="container fade-in">
+
+    <!-- Bandeau cotisation si le membre n'est pas en ordre -->
+    {% if membre_global and not membre_global.en_ordre_cotisation %}
+    <div style="background: linear-gradient(135deg, #C9A84C, #e0c06a); border-radius: 12px; padding: 16px 24px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 16px rgba(201,168,76,0.3);">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <i class="fas fa-exclamation-triangle" style="font-size:1.4em; color:#fff;"></i>
+            <div>
+                <strong style="color:#fff; font-size:0.95em;">Cotisation non payée</strong>
+                <p style="color:rgba(255,255,255,0.85); font-size:0.82em; margin:0;">Tu dois être en ordre pour réserver un court.</p>
+            </div>
+        </div>
+        <button type="button" onclick="document.getElementById('modalPaiement').style.display='flex'" class="btn btn-terre" style="padding:8px 20px; font-size:0.85em; white-space:nowrap;">
+            <i class="fas fa-credit-card"></i> Payer maintenant
+        </button>
+    </div>
+    {% endif %}
+
+    {% block contenu %}{% endblock %}
+</div>
+
+<!-- MODALE DE PAIEMENT (disponible sur toutes les pages) -->
+{% if membre_global and not membre_global.en_ordre_cotisation %}
+<div id="modalPaiement" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="border-top-color: var(--or-trophee); max-width: 420px;">
+
+        <div style="text-align:center; margin-bottom:16px;">
+            <i class="fas fa-trophy" style="font-size:2.5em; color:var(--or-trophee);"></i>
+        </div>
+
+        <h2 style="text-align:center; color:var(--vert-court); margin-bottom:8px;">Renouveler ma cotisation</h2>
+
+        <p style="text-align:center; color:var(--gris-filet); font-size:0.88em; margin-bottom:12px;">
+            Connecte-toi avec Google puis procède au paiement sécurisé via Stripe.
+        </p>
+
+        {% csrf_token %}
+
+        <!-- Étape 1 : Connexion Google -->
+        <div id="google-step" style="margin-bottom:16px;">
+            <p style="font-size:0.82em; color:var(--gris-filet); text-align:center; margin-bottom:8px;">
+                <i class="fab fa-google" style="color:#4285F4;"></i> Étape 1 — Lier ton compte Google
+            </p>
+            <div id="google-btn-base" style="display:flex; justify-content:center;"></div>
+        </div>
+
+        <!-- Étape 2 : Paiement (caché, affiché après Google) -->
+        <div id="stripe-step" style="display:none;">
+            <div style="text-align:center; margin-bottom:12px; padding:10px; background:var(--creme); border-radius:8px;">
+                <i class="fas fa-check-circle" style="color:#2D5016;"></i>
+                <span style="font-size:0.85em; color:var(--gris-filet);"> Compte Google lié :</span><br>
+                <strong id="google-email-display" style="font-size:0.92em;"></strong>
+            </div>
+            <a href="{% url 'creer_session_paiement' %}" class="btn btn-or"
+               style="text-decoration:none; text-align:center; width:100%; padding:14px; font-size:0.95em; display:block;">
+                <i class="fas fa-credit-card"></i> PAYER MAINTENANT (500€)
+            </a>
+        </div>
+
+        <button type="button" onclick="document.getElementById('modalPaiement').style.display='none'" class="btn btn-outline" style="width:100%; margin-top:10px;">
+            Fermer
+        </button>
+    </div>
+</div>
+
+<!-- Google Identity Services (mode popup) -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+window.addEventListener('load', function() {
+    if (typeof google === 'undefined' || !google.accounts) return;
+
+    google.accounts.id.initialize({
+        client_id: '{{ GOOGLE_CLIENT_ID }}',
+        callback: onGoogleSignIn,
+        ux_mode: 'popup',
+        auto_select: false
+    });
+
+    var container = document.getElementById('google-btn-base');
+    if (container) {
+        google.accounts.id.renderButton(container, {
+            type: 'standard',
+            size: 'large',
+            theme: 'outline',
+            text: 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'center',
+            width: 360
+        });
+    }
+});
+</script>
+{% endif %}
+
+<!-- Notifications SweetAlert aux couleurs Roland-Garros -->
+{% if messages %}
+    {% for m in messages %}
+        <script>
+            Swal.fire({
+                icon: '{% if m.tags == "success" %}success{% elif m.tags == "warning" %}warning{% else %}error{% endif %}',
+                title: '{% if m.tags == "success" %}Confirmé{% elif m.tags == "warning" %}Attention{% else %}Erreur{% endif %}',
+                text: '{{ m|escapejs }}',
+                confirmButtonColor: '#C1440E',
+                background: '#FDF6F0',
+                color: '#2C2C2C'
+            });
+        </script>
+    {% endfor %}
+{% endif %}
+
+<!-- Scripts -->
+<script src="{% static 'reservations/js/app.js' %}"></script>
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

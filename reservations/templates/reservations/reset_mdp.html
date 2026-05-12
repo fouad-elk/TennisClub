@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mot de passe oublié — Tennis Club</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'reservations/css/style.css' %}">
+    <style>
+        .steps-bar {
+            display: flex;
+            margin-bottom: 28px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .step {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.75em;
+            font-weight: 700;
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 0.08em;
+            background: #eee;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .step.active {
+            background: var(--terre-battue, #C1440E);
+            color: white;
+        }
+        .step.done {
+            background: var(--vert-court, #2D5016);
+            color: white;
+        }
+        .reset-info {
+            background: var(--creme, #FDF6F0);
+            border-left: 4px solid var(--terre-battue, #C1440E);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 0.85em;
+            color: var(--anthracite, #2C2C2C);
+            margin-bottom: 20px;
+            font-family: 'Inter', sans-serif;
+        }
+        .membre-badge {
+            background: var(--vert-court, #2D5016);
+            color: white;
+            border-radius: 10px;
+            padding: 12px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .membre-badge i { font-size: 1.6em; margin-bottom: 6px; display: block; color: var(--or-trophee, #C9A84C); }
+        .membre-badge span { font-size: 0.92em; }
+        .big-icon { text-align: center; font-size: 3em; margin-bottom: 14px; }
+        .field-input {
+            width: 100%; padding: 11px 14px; border: 1px solid #D5D5D5;
+            border-radius: 8px; font-family: 'Inter', sans-serif;
+            font-size: 0.92em; box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="login-page">
+
+    <div class="login-box fade-in">
+
+        <!-- Logo -->
+        <div class="login-logo">
+            <div class="logo-ball">
+                <i class="fas fa-key" style="color: var(--or-trophee, #C9A84C);"></i>
+            </div>
+            <h1>Mot de passe oublié</h1>
+            <span class="saison">Tennis Club — Saison 2025 / 2026</span>
+        </div>
+
+        <!-- ===== ÉTAPE 1 : numéro + date de naissance ===== -->
+        {% if etape == 1 %}
+            <div class="steps-bar">
+                <div class="step active"><i class="fas fa-id-card"></i> Vérification</div>
+                <div class="step"><i class="fas fa-lock"></i> Nouveau mot de passe</div>
+            </div>
+
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <div class="alert-box alert-error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="reset-info">
+                <i class="fas fa-info-circle" style="color: var(--terre-battue);"></i>
+                Saisis ton <strong>numéro d'affiliation</strong> et ta <strong>date de naissance</strong>
+                pour vérifier ton identité.
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Numéro d'affiliation (7 chiffres)</label>
+                    <input type="text" name="numero_affiliation" class="field-input"
+                           maxlength="7" minlength="7" required placeholder="Ex : 1234567"
+                           value="{{ form.numero_affiliation.value|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label>Date de naissance</label>
+                    <input type="date" name="date_naissance" class="field-input"
+                           required value="{{ form.date_naissance.value|default:'' }}">
+                </div>
+                <button type="submit" class="btn btn-terre" style="width:100%;padding:14px;font-size:0.92em;margin-top:8px;">
+                    <i class="fas fa-arrow-right"></i> VÉRIFIER MON IDENTITÉ
+                </button>
+            </form>
+
+        <!-- ===== ÉTAPE 2 : nouveau mot de passe ===== -->
+        {% elif etape == 2 %}
+            <div class="steps-bar">
+                <div class="step done"><i class="fas fa-check"></i> Vérification</div>
+                <div class="step active"><i class="fas fa-lock"></i> Nouveau mot de passe</div>
+            </div>
+            <div class="membre-badge">
+                <i class="fas fa-user-check"></i>
+                <span>Identité confirmée — <strong>{{ membre_nom }}</strong></span>
+            </div>
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <div class="alert-box alert-error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                {% endfor %}
+            {% endif %}
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Nouveau mot de passe</label>
+                    <input type="password" name="password1" class="field-input"
+                           required minlength="8" placeholder="Au moins 8 caractères">
+                </div>
+                <div class="form-group">
+                    <label>Confirmer le nouveau mot de passe</label>
+                    <input type="password" name="password2" class="field-input"
+                           required minlength="8" placeholder="Répète le mot de passe">
+                </div>
+                <button type="submit" class="btn btn-terre" style="width:100%;padding:14px;font-size:0.92em;margin-top:8px;">
+                    <i class="fas fa-check"></i> ENREGISTRER LE MOT DE PASSE
+                </button>
+            </form>
+        {% endif %}
+
+        <div class="link-bottom" style="margin-top: 16px;">
+            <a href="{% url 'login' %}"><i class="fas fa-arrow-left"></i> Retour à la connexion</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Environnement virtuel Python (trop lourd, le prof recrée avec pip install)
+env/
+venv/
+
+# Fichiers compilés Python (générés automatiquement, inutiles)
+__pycache__/
+*.pyc
+*.pyo
+
+# Base de données locale SQLite (on utilise PostgreSQL)
+*.sqlite3
+
+# Fichiers système Windows
+Thumbs.db
+desktop.ini
+
+# VS Code
+.vscode/

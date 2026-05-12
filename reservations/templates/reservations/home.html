@@ -1,0 +1,379 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tennis Club — Terrains</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Inter:wght@400;500;600&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="{% static 'reservations/css/style.css' %}">
+    <!-- Flatpickr calendrier -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+    <style>
+        /* Style personnalisé du calendrier Flatpickr */
+        .flatpickr-calendar {
+            border-radius: 16px !important;
+            box-shadow: 0 12px 40px rgba(193,68,14,0.18) !important;
+            border: none !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        .flatpickr-months { background: var(--vert-court, #2D5016); border-radius: 16px 16px 0 0; padding: 6px 0; }
+        .flatpickr-month, .flatpickr-prev-month, .flatpickr-next-month,
+        .flatpickr-current-month, .flatpickr-current-month .cur-month,
+        .flatpickr-current-month input.cur-year { color: white !important; fill: white !important; }
+        .flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg { fill: var(--or-trophee, #C9A84C) !important; }
+        .flatpickr-weekday { color: var(--terre-battue, #C1440E) !important; font-weight: 700; }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover {
+            background: var(--terre-battue, #C1440E) !important;
+            border-color: var(--terre-battue, #C1440E) !important;
+        }
+        .flatpickr-day:hover {
+            background: rgba(193,68,14,0.1) !important;
+            border-color: transparent !important;
+        }
+        .flatpickr-day.today {
+            border-color: var(--vert-court, #2D5016) !important;
+            color: var(--vert-court, #2D5016) !important;
+            font-weight: 700;
+        }
+        .flatpickr-day.today.selected { color: white !important; }
+        /* Bouton date cliquable */
+        .date-label-btn {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .date-label-btn:hover { color: var(--terre-battue, #C1440E); }
+        .date-label-btn .cal-hint {
+            font-size: 0.65em;
+            opacity: 0.55;
+            display: block;
+            text-align: center;
+            margin-top: 2px;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="nav-left">
+        <a href="{% url 'home' %}" class="logo">
+            <div class="logo-icon"><i class="fas fa-baseball-ball"></i></div>
+            Tennis Club
+        </a>
+        <div class="nav-links">
+            <a href="{% url 'dashboard' %}">
+                <i class="fas fa-th-large"></i> Tableau de bord
+            </a>
+            <a href="{% url 'home' %}" class="active">
+                <i class="fas fa-calendar-alt"></i> Terrains
+            </a>
+            <a href="{% url 'mes_reservations' %}">
+                <i class="fas fa-calendar-check"></i> Mes Réservations
+            </a>
+            <a href="{% url 'annuaire' %}">
+                <i class="fas fa-address-book"></i> Annuaire
+            </a>
+            {% if is_admin %}
+            <a href="{% url 'admin_liste_membres' %}" class="admin-link">
+                <i class="fas fa-users-cog"></i> Membres
+            </a>
+            <a href="{% url 'admin_liste_terrains' %}" class="admin-link">
+                <i class="fas fa-cog"></i> Terrains
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="nav-right">
+        {% if is_admin %}
+        <span style="background:#C1440E; color:#fff; padding:3px 10px; border-radius:6px; font-size:0.75em; font-weight:700; letter-spacing:1px; margin-right:8px;">ADMIN</span>
+        {% endif %}
+        <a href="{% url 'mon_profil' %}" class="nav-profile">
+            <i class="fas fa-user-circle"></i> {% if membre %}{{ membre.prenom }} {{ membre.nom }}{% else %}Mon Profil{% endif %}
+        </a>
+        <form action="{% url 'logout' %}" method="post" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="nav-logout" title="Déconnexion">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </form>
+    </div>
+</nav>
+
+<div class="container fade-in">
+
+    <!-- Bannière de bienvenue -->
+    {% if membre %}
+    <div style="background: linear-gradient(135deg, var(--vert-court), var(--vert-clair)); border-radius: 12px; padding: 24px 32px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(45, 80, 22, 0.2);">
+        <div>
+            <h1 style="color: #fff; font-size: 1.4em; margin-bottom: 4px; letter-spacing: 0.08em;">BIENVENUE {{ membre.prenom|upper }}</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 0.88em; text-transform: none; letter-spacing: normal;">Saison 2025 — 2026 &bull; {{ date_jour|date:"l d F Y" }}</p>
+        </div>
+        <div>
+            {% if membre.en_ordre_cotisation %}
+                <span class="badge badge-green" style="font-size: 0.85em; padding: 6px 16px;">
+                    <i class="fas fa-check-circle"></i> EN ORDRE
+                </span>
+            {% else %}
+                <span class="badge badge-red" style="font-size: 0.85em; padding: 6px 16px;">
+                    <i class="fas fa-exclamation-triangle"></i> COTISATION DUE
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- EN-TÊTE + NAVIGATION DATE -->
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-th-large" style="color: var(--terre-battue); margin-right: 8px;"></i> Planning des Terrains</h1>
+            <p>Consultez les disponibilités et réservez un court.</p>
+        </div>
+        <div class="date-nav">
+            <a href="?date={{ date_precedente|date:'Y-m-d' }}"><i class="fas fa-chevron-left"></i></a>
+            <!-- Bouton calendrier -->
+            <div class="date-label date-label-btn" id="date-picker-trigger" title="Choisir une date dans le calendrier">
+                <i class="fas fa-calendar-alt" style="color:var(--terre-battue);"></i>
+                <div>
+                    <span id="date-display">{{ date_jour|date:"l d F" }}</span>
+                    <span class="cal-hint"><i class="fas fa-mouse-pointer" style="font-size:0.9em;"></i> cliquer pour choisir</span>
+                </div>
+            </div>
+            <!-- Input caché pour Flatpickr -->
+            <input type="text" id="date-picker-input"
+                   value="{{ date_jour|date:'Y-m-d' }}"
+                   style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;">
+            <a href="?date={{ date_suivante|date:'Y-m-d' }}"><i class="fas fa-chevron-right"></i></a>
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var picker = flatpickr('#date-picker-input', {
+                locale: 'fr',
+                dateFormat: 'Y-m-d',
+                defaultDate: '{{ date_jour|date:"Y-m-d" }}',
+                minDate: 'today',
+                maxDate: new Date().fp_incr(365),
+                disableMobile: false,
+                onChange: function(selectedDates, dateStr) {
+                    window.location.href = '?date=' + dateStr;
+                }
+            });
+            document.getElementById('date-picker-trigger').addEventListener('click', function() {
+                picker.open();
+            });
+        });
+        </script>
+    </div>
+
+    <!-- LÉGENDE -->
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot libre"></div> Libre</div>
+        <div class="legend-item"><div class="legend-dot reserve"></div> Réservé</div>
+        <div class="legend-item"><div class="legend-dot bloque"></div> Bloqué</div>
+        <div class="legend-item"><div class="legend-dot entretien"></div> Entretien</div>
+    </div>
+
+    <!-- GRILLE DU PLANNING -->
+    <div class="planning-wrapper">
+        <table class="planning-table">
+            <thead>
+                <tr>
+                    <th class="time-col">Heure</th>
+                    {% for t in terrains %}
+                    <th>
+                        <div class="terrain-name">Court {{ t.numero }}</div>
+                        <div class="terrain-surface">{{ t.surface }}</div>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligne in lignes %}
+                <tr>
+                    <td class="time-col">{{ ligne.heure }}h00</td>
+                    {% for case in ligne.cases %}
+                    <td>
+                        {% if case.info.statut == "reserve" %}
+                            <div class="slot slot-reserved">
+                                <div class="player-name">{{ case.info.joueurs }}</div>
+                                <div class="match-type">{{ case.info.type }}</div>
+                                {% if case.info.peut_annuler %}
+                                <a href="#" class="btn-annuler"
+                                   data-url="{% url 'supprimer_reservation' case.info.resa_id %}"
+                                   data-joueurs="{{ case.info.joueurs }}"
+                                   data-type="{{ case.info.type }}"
+                                   data-court="Court {{ case.terrain.numero }}"
+                                   data-horaire="{{ ligne.heure }}h00"
+                                   style="font-size:0.7em; color:var(--rouge-faute); text-decoration:none; margin-top:2px;">
+                                   <i class="fas fa-times"></i> Annuler
+                                </a>
+                                {% endif %}
+                            </div>
+
+                        {% elif case.info.statut == "reserve_suite" %}
+                            <div class="slot slot-reserved">
+                                <div class="match-type">{{ case.info.type }}</div>
+                            </div>
+
+                        {% elif case.info.statut == "entretien" %}
+                            <div class="slot slot-entretien">
+                                <i class="fas fa-wrench"></i> Entretien
+                            </div>
+
+                        {% elif case.info.statut == "bloque" %}
+                            <div class="slot slot-blocked">
+                                <div class="blocked-raison">{{ case.info.raison }}</div>
+                                <div class="blocked-admin">{{ case.info.admin }}</div>
+                            </div>
+
+                        {% else %}
+                            <div class="slot slot-free" onclick="ouvrirModal('{{ case.terrain.id }}', '{{ case.terrain.numero }}', '{{ case.heure }}', '{{ case.terrain.surface }}')">
+                            </div>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODALE DE RÉSERVATION -->
+<div id="modalResa" class="modal-overlay" data-date="{{ date_jour|date:'Y-m-d' }}">
+    <div class="modal-content">
+        <h2><i class="fas fa-calendar-plus"></i> Réserver un court</h2>
+        <p id="labelDetails" style="background: var(--creme); padding: 12px; border-radius: 10px; font-size: 0.9em; color: var(--anthracite); margin-bottom: 16px; border-left: 4px solid var(--terre-battue);"></p>
+
+        <form method="POST" action="{% url 'creer_reservation' %}">
+            {% csrf_token %}
+            <div style="display:none;">{{ form.terrain }} {{ form.date }} {{ form.heure_debut }}</div>
+
+            <div class="form-group">
+                <label>Type de match</label>
+                <select id="id_type_match" name="type_match" style="width:100%; padding:11px 14px; border:1px solid #D5D5D5; border-radius:8px; font-family:'Inter',sans-serif; font-size:0.9em;">
+                    <option value="simple">Simple (1h — 2 joueurs)</option>
+                    <option value="double">Double (2h — 4 joueurs)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Partenaire(s)</label>
+                <div style="max-height:150px; overflow-y:auto; border:1px solid #D5D5D5; border-radius:8px; padding:10px; background: var(--creme);">
+                    {{ form.membres }}
+                </div>
+            </div>
+
+            <button type="submit" class="btn-confirm">
+                <i class="fas fa-check"></i> CONFIRMER LA RÉSERVATION
+            </button>
+            <button type="button" onclick="fermerModal()" class="btn-cancel">Annuler</button>
+        </form>
+    </div>
+</div>
+
+<!-- Notifications SweetAlert -->
+{% if messages %}
+    {% for m in messages %}
+        <script>
+            Swal.fire({
+                icon: '{% if m.tags == "success" %}success{% elif m.tags == "warning" %}warning{% else %}error{% endif %}',
+                title: '{% if m.tags == "success" %}Confirmé{% elif m.tags == "warning" %}Attention{% else %}Erreur{% endif %}',
+                text: '{{ m|escapejs }}',
+                confirmButtonColor: '#C1440E',
+                background: '#FDF6F0',
+                color: '#2C2C2C'
+            });
+        </script>
+    {% endfor %}
+{% endif %}
+
+<!-- MODALE RAPPEL COTISATION (apparaît si pas en ordre) -->
+{% if rappel_cotisation %}
+<div id="modalRappel" class="modal-overlay modal-rappel" style="display:block;">
+    <div class="modal-content" style="border-top-color: var(--or-trophee);">
+        {% csrf_token %}
+
+        <div class="rappel-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+
+        <h2 class="rappel-titre">COTISATION NON PAYÉE</h2>
+
+        <p class="rappel-message">
+            Tu dois renouveler ta cotisation pour pouvoir réserver un court.
+        </p>
+
+        <div class="rappel-date">{{ date_echeance_str }}</div>
+
+        {% csrf_token %}
+
+        <!-- Étape 1 : Connexion Google -->
+        <div id="google-step-rappel" style="margin-bottom:12px;">
+            <p style="font-size:0.82em; color:var(--gris-filet); text-align:center; margin-bottom:8px;">
+                <i class="fab fa-google" style="color:#4285F4;"></i> Connecte-toi avec Google
+            </p>
+            <div id="google-btn-container" style="display:flex; justify-content:center;"></div>
+        </div>
+
+        <!-- Étape 2 : Paiement (caché, affiché après Google) -->
+        <div id="stripe-step-rappel" style="display:none;">
+            <div style="text-align:center; margin-bottom:12px; padding:10px; background:var(--creme); border-radius:8px;">
+                <i class="fas fa-check-circle" style="color:#2D5016;"></i>
+                <span style="font-size:0.85em; color:var(--gris-filet);"> Compte Google lié :</span><br>
+                <strong id="google-email-rappel" style="font-size:0.92em;"></strong>
+            </div>
+            <a href="{% url 'creer_session_paiement' %}" class="btn-confirm"
+               style="text-decoration:none; text-align:center; background: var(--or-trophee);">
+                <i class="fas fa-credit-card"></i> PAYER MAINTENANT (500€)
+            </a>
+        </div>
+
+        <button type="button" onclick="fermerRappel()" class="btn-cancel">
+            Me rappeler plus tard
+        </button>
+    </div>
+</div>
+
+<!-- Google Identity Services (mode popup) -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+window.addEventListener('load', function() {
+    if (typeof google === 'undefined' || !google.accounts) return;
+
+    google.accounts.id.initialize({
+        client_id: '{{ GOOGLE_CLIENT_ID }}',
+        callback: onGoogleSignIn,
+        ux_mode: 'popup',
+        auto_select: false
+    });
+
+    var container = document.getElementById('google-btn-container');
+    if (container) {
+        google.accounts.id.renderButton(container, {
+            type: 'standard',
+            size: 'large',
+            theme: 'outline',
+            text: 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'center',
+            width: 340
+        });
+    }
+});
+</script>
+{% endif %}
+
+<script src="{% static 'reservations/js/app.js' %}"></script>
+</body>
+</html>
