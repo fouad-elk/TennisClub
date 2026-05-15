@@ -136,6 +136,6 @@ Membre non en ordre → Modale automatique
 
 ## Auteurs
 
-- **Fouad EL KOURATI**  
+- **Fouad EL KADOURI**  
   Bachelier en Informatique de Gestion — Haute École  
   Année 2025-2026
