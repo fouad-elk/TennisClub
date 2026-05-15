@@ -16,3 +16,7 @@ desktop.ini
 
 # VS Code
 .vscode/
+
+# Scripts utilitaires (pas du code source)
+generer_doc_api.py
+exemples/
