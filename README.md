@@ -137,5 +137,5 @@ Membre non en ordre → Modale automatique
 ## Auteurs
 
 - **Fouad EL KADOURI**  
-  Bachelier en Informatique de Gestion — Haute École  
+  Bachelier en Informatique de Gestion — IPEFA Verviers 
   Année 2025-2026
